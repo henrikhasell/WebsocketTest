@@ -1,50 +1,71 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState } from 'react';
+import React, { Component } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import io from 'socket.io-client';
 
-const socket = io('http://51.19.126.93:9090', {
-  autoConnect: false
-});
+const CONNECTION_ADDRESS = 'http://51.19.126.93:9090';
 
-// Debug code, 
-const log = console.warn;
-socket.on('connect', () => log('Socket is connected'));
-socket.on('disconnect', () => log('Socket is disconnected'));
+class App extends Component {
+  state = {
+    connected: false,
+    currentMessage: '',
+    messages: []
+  }
 
-export default function App() {
-  const [currentMessage, setCurrentMessage] = useState('');
-  const [chatMessages, setChatMessages] = useState([]);
-  const [connected, setConnected] = useState(false);
+  socket = io(CONNECTION_ADDRESS, {
+    autoConnect: false
+  });
 
-  const addMessage = message => setChatMessages([...chatMessages, message]);
+  componentDidMount() {
+    this.socket.on('connect', () => {
+      this.infoLog('Connected to server.');
+      this.setState({connected: true});
+    });
 
-  const sendMessage = message => socket.emit('chat-message', message);
+    this.socket.on('disconnect', () => {
+      this.infoLog('Disonnected from server.');
+      this.setState({connected: false});
+    });
 
-  const submitChatMessage = () => {
-    sendMessage(currentMessage);
-    setCurrentMessage('');
+    this.socket.on('chat-message', this.addMessage.bind(this));
+    this.socket.open();
+  }
+
+  componentWillUnmount() {
+    this.socket.disconnect();
+  }
+
+  addMessage(message) {
+    this.setState({messages: [...this.state.messages, message]});
+  }
+
+  infoLog(message) {
+    this.addMessage(`=== ${message} ===`);
+  }
+
+  sendMessage(message) {
+    this.socket.emit('chat-message', message);
+  }
+
+  submitChatMessage() {
+    this.sendMessage(this.state.currentMessage);
+    this.setState({currentMessage: ''});
   };
 
-  useEffect(() => {
-    socket.on('connect', () => setConnected(true));
-    socket.on('disconnect', () => setConnected(false));
-    socket.on('chat-message', addMessage);
-    socket.open();
-  }, [chatMessages]);
-
-  return (
-    <View style={styles.container}>
-      <Text>Messages Appear Below</Text>
-      <Text>{connected ? 'Connected :)' : 'Diconnected :('}</Text>
-      {chatMessages.map((message, index) => <Text key={index}>{message}</Text>)}
-      <TextInput
-        style={styles.text_input}
-        value={currentMessage}
-        onSubmitEditing={submitChatMessage}
-        onChangeText={setCurrentMessage}/>
-    </View>
-  );
+  render() {
+    return (
+      <View style={styles.container}>
+        <Text>[{this.state.connected ? 'Connected to Server' : 'Disonnected from Server'}]</Text>
+        <Text>Messages Appear Below</Text>
+        {this.state.messages.map((message, index) => <Text key={index}>{message}</Text>)}
+        <TextInput
+          style={styles.text_input}
+          value={this.state.currentMessage}
+          onSubmitEditing={this.submitChatMessage.bind(this)}
+          onChangeText={i => this.setState({currentMessage: i})}/>
+      </View>
+    );
+  }
 }
 
 const styles = StyleSheet.create({
@@ -59,3 +80,5 @@ const styles = StyleSheet.create({
     width: 100
   }
 });
+
+export default App;
