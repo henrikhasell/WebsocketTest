@@ -1,0 +1,12 @@
+{
+  "name": "WebsocketTest",
+  "displayName": "WebsocketTest",
+  "expo": {
+    "name": "WebsocketTest",
+    "slug": "WebsocketTest",
+    "version": "1.0.0",
+    "assetBundlePatterns": [
+      "**/*"
+    ]
+  }
+}
