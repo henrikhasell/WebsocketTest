@@ -1,12 +1,26 @@
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
+import io from 'socket.io-client';
+
+const socket = io('http://desktop.croydon.vpn:9090', {pingTimeout: 60000});
 
 export default function App() {
+  const [currentMessage, setCurrentMessage] = useState('');
+  const [chatMessages, setChatMessages] = useState([]);
+
+  const submitChatMessage = () => {
+    socket.emit('chat-message', currentMessage);
+    setCurrentMessage('');
+  };
+
   return (
     <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
+      {chatMessages.map(message => <Text>{message}</Text>)}
+      <TextInput
+        value={currentMessage}
+        onSubmitEditing={submitChatMessage}
+        onChangeText={setCurrentMessage}/>
     </View>
   );
 }
