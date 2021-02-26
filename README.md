@@ -3,6 +3,7 @@
 ## Running the Server
 
 ```sh
+npm install
 node server.js
 ```
 
